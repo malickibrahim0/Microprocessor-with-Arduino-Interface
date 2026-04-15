@@ -1,0 +1,27 @@
+00000001 // 00: LDI R0, 0x00     (Initialize R0 to 0)
+00100101 // 01: LDI R1, 0x01     (Initialize R1 to 1)
+00200001 // 02: LDI R2, 0x00     (Initialize R2 to 0)
+00300A01 // 03: LDI R3, 0x0A     (Initialize R3 to 10)
+0003206D // 04: CMPJ R2, R3, 6   (If R2 == R3, Jump to 6)
+00410002 // 05: ADD R4, R0, R1   (R4 = R0 + R1)
+00001004 // 06: ADI R0, R1, 0    (R0 = R1 + 0)
+00104004 // 07: ADI R1, R4, 0    (R1 = R4 + 0)
+00220008 // 08: INC R2, R2       (R2++)
+0000004E // 09: JMP 4            (Jump back to instruction 4)
+00504004 // 10: ADI R5, R4, 0    (R5 = R4 + 0)
+00635006 // 11: DIV R6, R5, R3   (R6 = R5 / R3)
+00736005 // 12: MUL R7, R6, R3   (R7 = R6 * R3)
+00835003 // 13: SUB R8, R5, R3   (R8 = R5 - R3)
+00903204 // 14: ADI R9, R3, 2    (R9 = R3 + 2)
+00A90007 // 15: DEC RA, R9       (RA = R9 - 1)
+00BA0007 // 16: DEC RB, RA       (RB = RA - 1)
+00C8B00B // 17: XOR RC, RB, R8   (RC = RB ^ R8)
+00D1C009 // 18: NOR RD, RC, R1   (RD = ~(RC | R1))
+00FD000C // 19: COMP RF, RD      (RF = ~RD)
+
+// BARREL SHIFT OPCODES
+01401206 // 20: SHL R4, R1, 2    (Prefix=1, Page 2 SHL: Shift R1 left by 2, store in R4)
+01504107 // 21: SHR R5, R4, 1    (Prefix=1, Page 2 SHR: Shift R4 right by 1, store in R5)
+
+// HALT 
+0000000F // 22: HLT              (Stop Execution)
