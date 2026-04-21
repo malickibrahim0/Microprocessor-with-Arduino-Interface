@@ -9,7 +9,7 @@ logic [31:0] mem [0:255];
 
 initial begin
     // Load program into memory
-    $readmemh("memory.hex", mem);
+    $readmemh("../memory.hex", mem);
 end
 
 assign Instruction_Bus = mem[Program_Counter[9:2]];
