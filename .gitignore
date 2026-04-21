@@ -1,11 +1,36 @@
-﻿work/
+# ModelSim
+work/
 *.wlf
 *.vstf
 *.mpf
 *.cr.mti
 transcript
+vsim.wlf
+
+# Quartus
 db/
 incremental_db/
 output_files/
+*.qpf
+*.qsf
 *.qws
-*.bak
+*.rpt
+*.summary
+*.smsg
+*.pin
+*.pof
+*.sof
+*.jdi
+*.done
+*.sld
+c5_pin_model_dump.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
