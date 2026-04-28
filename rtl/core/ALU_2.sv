@@ -1,79 +1,81 @@
 module ALU_32(
-input  logic [31:0] Aluin_A, Aluin_B,
-input  logic [31:0] RA_Instant, RB_Instant,
-input  logic [3:0]  OPCODE,
-input  logic        prefix_active,
-input  logic [31:0] ram_data,
-input  logic [31:0] mmio_data,
-output logic [31:0] Alu_out,
-output logic        Cout, OF, zero
+    input  logic [31:0] Aluin_A, Aluin_B,
+    input  logic [31:0] RA_Instant, RB_Instant,
+    input  logic [3:0]  OPCODE,
+    input  logic        prefix_active,
+    input  logic [31:0] ram_data,
+    input  logic [31:0] mmio_data,
+    output logic [31:0] Alu_out,
+    output logic        Cout, OF, zero
 );
 
-// 33-bit arrays to catch the 33rd carry bit
-logic [32:0] Result_P1 [0:15];
-logic [32:0] Result_P2 [0:15];
+    logic [32:0] mux_out;
+    logic [4:0]  shift_amt;
+    logic [4:0]  inv_shift;
 
-always_comb begin
-    // Page 1: Original Arithmetic
-    Result_P1 = '{default: 33'h0};
-    Result_P2 = '{default: 33'h0};
-    Result_P1[0]  = 33'h0;                                               
-    Result_P1[1]  = {1'b0, RA_Instant[15:0], RB_Instant[15:0]}; // Packed LDI
-    Result_P1[2]  = {1'b0, Aluin_A} + {1'b0, Aluin_B};                   
-    Result_P1[3]  = {1'b0, Aluin_A} - {1'b0, Aluin_B};                   
-    Result_P1[4]  = {1'b0, Aluin_A} + {1'b0, RB_Instant};                
-    Result_P1[5]  = {1'b0, Aluin_A * Aluin_B};                           
-    Result_P1[6]  = (Aluin_B == 0) ? 33'h0 : {1'b0, Aluin_A / Aluin_B};  
-    Result_P1[7]  = {1'b0, Aluin_B} - 33'h1;                             
-    Result_P1[8]  = {1'b0, Aluin_B} + 33'h1;                             
-    Result_P1[9]  = {1'b0, ~(Aluin_A | Aluin_B)};                        
-    Result_P1[10] = {1'b0, ~(Aluin_A & Aluin_B)};                        
-    Result_P1[11] = {1'b0, Aluin_A ^ Aluin_B};                           
-    Result_P1[12] = {1'b0, ~Aluin_B};                                    
-    Result_P1[13] = 33'h0;                                               
-    Result_P1[14] = 33'h0;                                               
-    Result_P1[15] = 33'h0;                                               
+    always_comb begin
+        // Safe shift bounds for ROL/ROR
+        shift_amt = RB_Instant[4:0];
+        inv_shift = 5'd32 - shift_amt; 
+        
+        // Default assignment to prevent inferred latches
+        mux_out = 33'h0;
 
-    // Page 2: Extended Operations 
-    Result_P2[0]  = {1'b0, Aluin_B};                                     
-    Result_P2[1]  = {1'b0, ram_data};                                    
-    Result_P2[2]  = 33'h0;                                               
-    Result_P2[3]  = 33'h0;                                               
-    Result_P2[4]  = {1'b0, ram_data};                                    
-    Result_P2[5]  = {1'b0, Aluin_B};                                     
-    // Shift operations mask RB_Instant to 5 bits (0-31 shifts)
-    Result_P2[6]  = {1'b0, Aluin_A} << RB_Instant[4:0];                  
-    Result_P2[7]  = {1'b0, Aluin_A} >> RB_Instant[4:0];                  
-    Result_P2[8]  = {1'b0, Aluin_A & Aluin_B};                           
-    Result_P2[9]  = {1'b0, Aluin_A | Aluin_B};                           
-    Result_P2[10] = {1'b0, mmio_data};                                   
-    Result_P2[11] = {1'b0, Aluin_B};                                     
-    Result_P2[12] = {1'b0, (Aluin_A << RB_Instant[4:0]) | (Aluin_A >> (32 - RB_Instant[4:0]))}; 
-    Result_P2[13] = {1'b0, (Aluin_A >> RB_Instant[4:0]) | (Aluin_A << (32 - RB_Instant[4:0]))}; 
-    Result_P2[14] = {1'b0, Aluin_A} - {1'b0, RB_Instant};                
-    Result_P2[15] = 33'h0;                                               
-end
+        // Synthesis-friendly opcode decoding
+        if (!prefix_active) begin
+            case (OPCODE)
+                4'h0: mux_out = 33'h0;                                               // NOP
+                4'h1: mux_out = {1'b0, RA_Instant[15:0], RB_Instant[15:0]};          // LDI
+                4'h2: mux_out = {1'b0, Aluin_A} + {1'b0, Aluin_B};                   // ADD
+                4'h3: mux_out = {1'b0, Aluin_A} - {1'b0, Aluin_B};                   // SUB
+                4'h4: mux_out = {1'b0, Aluin_A} + {1'b0, RB_Instant};                // ADI
+                4'h5: mux_out = {1'b0, Aluin_A * Aluin_B};                           // MUL
+                4'h6: mux_out = (Aluin_B == 0) ? 33'h0 : {1'b0, Aluin_A / Aluin_B};  // DIV
+                4'h7: mux_out = {1'b0, Aluin_B} - 33'h1;                             // DEC
+                4'h8: mux_out = {1'b0, Aluin_B} + 33'h1;                             // INC
+                4'h9: mux_out = {1'b0, ~(Aluin_A | Aluin_B)};                        // NOR
+                4'hA: mux_out = {1'b0, ~(Aluin_A & Aluin_B)};                        // NAND
+                4'hB: mux_out = {1'b0, Aluin_A ^ Aluin_B};                           // XOR
+                4'hC: mux_out = {1'b0, ~Aluin_B};                                    // COMP
+                4'hD, 4'hE, 4'hF: mux_out = 33'h0;                                   // CMPJ, JMP, HLT
+                default: mux_out = 33'h0;
+            endcase
+        end else begin
+            case (OPCODE)
+                4'h0: mux_out = {1'b0, Aluin_B};                                     // MOV
+                4'h1: mux_out = {1'b0, ram_data};                                    // LOAD
+                4'h2, 4'h3: mux_out = 33'h0;                                         // JAL, JALR
+                4'h4: mux_out = {1'b0, ram_data};                                    // LOAD_ALT
+                4'h5: mux_out = {1'b0, Aluin_B};                                     // CORDIC_TRIG
+                4'h6: mux_out = {1'b0, Aluin_A} << shift_amt;                        // SHL
+                4'h7: mux_out = {1'b0, Aluin_A} >> shift_amt;                        // SHR
+                4'h8: mux_out = {1'b0, Aluin_A & Aluin_B};                           // AND
+                4'h9: mux_out = {1'b0, Aluin_A | Aluin_B};                           // OR
+                4'hA: mux_out = {1'b0, mmio_data};                                   // MMIO_RD
+                4'hB: mux_out = {1'b0, Aluin_B};                                     // MMIO_WR
+                4'hC: mux_out = {1'b0, (Aluin_A << shift_amt) | (Aluin_A >> inv_shift)}; // ROL
+                4'hD: mux_out = {1'b0, (Aluin_A >> shift_amt) | (Aluin_A << inv_shift)}; // ROR
+                4'hE: mux_out = {1'b0, Aluin_A} - {1'b0, RB_Instant};                // SUI
+                4'hF: mux_out = 33'h0;                                               // RETI
+                default: mux_out = 33'h0;
+            endcase
+        end
+        
+        // Output Assignments
+        Alu_out = mux_out[31:0];
+        Cout    = mux_out[32];
+        zero    = (Alu_out == 32'h0);
 
-logic [32:0] mux_out;
-always_comb begin
-    if (prefix_active) 
-        mux_out = Result_P2[OPCODE];
-    else 
-        mux_out = Result_P1[OPCODE];
-    
-    Alu_out = mux_out[31:0];
-    Cout    = mux_out[32];
-    zero    = (Alu_out == 32'h0);
-
-    // 32-bit Overflow Logic for Addition
-    if (!prefix_active && (OPCODE == 4'h2 || OPCODE == 4'h4)) begin
-        OF = (Aluin_A[31] == Aluin_B[31]) && (mux_out[31] != Aluin_A[31]);
-    // Overflow Logic for Subtraction
-    end else if (!prefix_active && OPCODE == 4'h3) begin
-        OF = (Aluin_A[31] != Aluin_B[31]) && (mux_out[31] != Aluin_A[31]);
-    end else begin
-        OF = 1'b0;
+        // Overflow Logic
+        if (!prefix_active && OPCODE == 4'h2) begin
+            OF = (Aluin_A[31] == Aluin_B[31]) && (mux_out[31] != Aluin_A[31]);
+        end else if (!prefix_active && OPCODE == 4'h4) begin
+            OF = (Aluin_A[31] == RB_Instant[31]) && (mux_out[31] != Aluin_A[31]);
+        end else if (!prefix_active && OPCODE == 4'h3) begin
+            OF = (Aluin_A[31] != Aluin_B[31]) && (mux_out[31] != Aluin_A[31]);
+        end else begin
+            OF = 1'b0;
+        end
     end
-end
 
 endmodule

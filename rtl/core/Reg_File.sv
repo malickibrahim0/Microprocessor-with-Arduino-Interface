@@ -19,16 +19,14 @@ assign out_data_B = registers[read_addr_B];
 
 // Synchronous Write (Save ALU result on clock edge)
 always_ff @(posedge clk) begin
-    if (reset) begin
-        // Clear all registers on reset (NOTE: sim-only, use for-loop for Quartus synthesis)
-        registers <= '{default: 32'h0};
+if (reset) begin
+        for (int i = 0; i < 16; i++) begin
+            registers[i] <= 32'h0;
+        end
     end else if (write_enable) begin
-        // Register 0 is hardwired to 0
-        if (write_addr != 4'h0) begin
             registers[write_addr] <= write_data;
         end
     end
-end
 
 endmodule
 
