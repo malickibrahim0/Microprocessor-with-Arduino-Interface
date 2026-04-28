@@ -1,18 +1,24 @@
 # ModelSim
 work/
 *.wlf
+wlft*
 *.vstf
 *.mpf
 *.cr.mti
 transcript
 vsim.wlf
+modelsim.ini
 
 # Quartus
 db/
 incremental_db/
 output_files/
+simulation/
+greybox_tmp/
 *.qpf
 *.qsf
+*.qpf.bak
+*.qsf.bak
 *.qws
 *.rpt
 *.summary
@@ -21,9 +27,12 @@ output_files/
 *.pof
 *.sof
 *.jdi
+*.jic
+*.cdf
 *.done
 *.sld
 c5_pin_model_dump.txt
+PLLJ_PLLSPE_INFO.txt
 
 # Python
 __pycache__/
@@ -31,6 +40,9 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
-# OS
+# OS / editor
+.vscode/
 .DS_Store
 Thumbs.db
+*.bak
+*.swp
