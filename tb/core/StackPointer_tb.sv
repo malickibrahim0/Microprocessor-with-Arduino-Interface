@@ -10,7 +10,7 @@ logic [7:0] SP;
 logic SP_Empty;
 logic SP_Full;
 
-// Operation encodings (Matching the DUT)
+// Operation encodings (Matching the Test)
 localparam logic [2:0] SP_HOLD = 3'b000;
 localparam logic [2:0] SP_DEC1 = 3'b001;
 localparam logic [2:0] SP_INC1 = 3'b010;
@@ -19,8 +19,8 @@ localparam logic [2:0] SP_INC2 = 3'b100;
 localparam logic [2:0] SP_DEC3 = 3'b101;
 localparam logic [2:0] SP_INC3 = 3'b110;
 
-// Instantiate Device Under Test (DUT)
-StackPointer dut (
+// Instantiate Stack Pointer 
+StackPointer Test (
     .clk(clk),
     .reset(reset),
     .SP_OP(SP_OP),
@@ -77,9 +77,9 @@ initial begin
     // Task 8: Test SP_Full Flag
     $display("Driving SP to Full State (0x00)...");
     // Force SP near bottom to save simulation time
-    force dut.SP = 8'h02; 
+    force Test.SP = 8'h02; 
     #20;
-    release dut.SP;
+    release Test.SP;
     
     apply_op(SP_DEC2, "Push 2 Bytes to hit 0x00");
     check_state(8'h00, 0, 1, "Stack Full Flag Check");

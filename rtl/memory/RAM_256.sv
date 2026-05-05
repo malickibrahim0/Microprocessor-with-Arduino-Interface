@@ -11,29 +11,27 @@
 // the pipeline is writing back another address.
 // merging them into a single will lose parallelism and the pipeliene wouldn't work 
 
-module RAM_256x8 (
-input  logic clk,                  // System Clock (50 Mhz)
-input  logic write_enable,         // Write enable (Synchrnous)
-input  logic [7:0] write_address,  // Write address (8 bits for 256 locations)
-input  logic [7:0] data_in,        // Data to write (8 bits)
-input  logic [7:0] read_address,   // Read address (independant of write)
-output logic [7:0] data_out        // Data read out at reader_address
+module RAM_32bit (
+input  logic clk,
+input  logic write_enable,
+input  logic [31:0] address,      // 32-bit address bus
+input  logic [31:0] data_in,      // 32-bit data input
+output logic [31:0] data_out      // 32-bit data output
 );
 
+// 1024 locations, 32 bits each (4KB of Data RAM)
+logic [31:0] memory [0:1023];
 
-    // 256 locations, 8 bits each
-    logic [7:0] memory [0:255];
-
-    // Synchronous write
-    always_ff @(posedge clk) begin
-        if (write_enable) begin
-            memory[write_address] <= data_in;
-        end
+// Synchronous write
+always_ff @(posedge clk) begin
+    if (write_enable) begin
+        // Using address bits [11:2] to maintain 4-byte word alignment
+        memory[address[11:2]] <= data_in;
     end
+end
 
-    // Asynchronous read (continuous assignment)
-    assign data_out = memory[read_address];
-
+// Asynchronous read for the Execute Stage
+assign data_out = memory[address[11:2]];
 
 endmodule
 
