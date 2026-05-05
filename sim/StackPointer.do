@@ -8,7 +8,7 @@
 
 quietly set SRC "../rtl/core/StackPointer.sv"
 quietly set TB  "../tb/core/StackPointer_tb.sv"
-quietly set TOP "tb_StackPointer"           ;# ✅ fixed: was StackPointer_tb
+quietly set TOP "tb_StackPointer"           
 
 # ---------- Library ----------
 if {[file exists work]} { vdel -all -lib work }
@@ -34,7 +34,7 @@ add wave -radix binary       sim:/$TOP/SP_Empty
 add wave -radix binary       sim:/$TOP/SP_Full
 
 add wave -divider "== DUT INTERNALS =="
-add wave -radix hexadecimal  sim:/$TOP/dut/SP     ;# ✅ fixed: was uut
+add wave -radix hexadecimal  sim:/$TOP/dut/SP     
 
 # ---------- Run ----------
 run -all

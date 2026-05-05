@@ -10,7 +10,7 @@
 
 quietly set SRC "../rtl/memory/RAM_256.sv"
 quietly set TB  "../tb/memory/RAM_256_tb.sv"
-quietly set TOP "tb_RAM_256x8"              ;# matches module name in TB
+quietly set TOP "tb_RAM_256x8"              
 
 # ---------- Library ----------
 if {[file exists work]} { vdel -all -lib work }
