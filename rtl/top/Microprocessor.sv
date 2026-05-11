@@ -188,4 +188,115 @@ assign RF_data_in = EX_WB.alu_out;
 assign OPCODE_WB  = EX_WB.OPCODE;
 
 endmodule
+
+
+module lab5_Pipelined_pv(
+input clk,                         // 50MHz (PIN_P11)
+input SW0,                         // SW0: asynchronous (active high) reset 
+input SW1,                         // SW1: single-step mode 
+input SW2, SW3, SW4,               // SW2-SW4: 7-seg Display select
+input KEY0,                        // single-step mode clock input (active low)
+output logic [6:0] SevSeg5, SevSeg4, SevSeg3, SevSeg2, SevSeg1, SevSeg0,
+output logic [7:0] LED             
+);
+
+// Internal signals
+logic [3:0] OPCODE;                
+logic [7:0] PC, Alu_out, RF_data_in;     
+logic Cout, OF;                    
+logic clk_slow;                    
+logic clk_MCU;                     
+logic [7:0] SevSeg_Display [5:0];  
+logic [2:0] Display_Select;        
+logic [14:0] counter;              
+
+// Debouncing signals
+logic [2:0] key0_shift;
+logic key0_debounced;
+
+// Clock Divider (50MHz to ~1kHz)
+always_ff @(posedge clk) begin
+    if (SW0) begin
+        counter <= 15'd0;
+        clk_slow <= 1'b0;
+    end else if (counter >= 15'd24999) begin
+        counter <= 15'd0;
+        clk_slow <= ~clk_slow; 
+    end else begin
+        counter <= counter + 1'd1;
+    end
+end
+
+// Debouncer sampled at 1kHz
+always_ff @(posedge clk_slow or posedge SW0) begin
+    if (SW0) begin
+        key0_shift <= 3'b111;     
+        key0_debounced <= 1'b1;
+    end else begin
+        key0_shift <= {key0_shift[1:0], KEY0};
+        if (key0_shift == 3'b111)      key0_debounced <= 1'b1;
+        else if (key0_shift == 3'b000) key0_debounced <= 1'b0;
+    end
+end
+
+assign clk_MCU = (SW1) ? key0_debounced : clk_slow;  
+assign LED = PC; 
+assign Display_Select = {SW4, SW3, SW2}; 
+
+
+Lab5_Pipelined MCU_Pipelined (
+    .clk(clk_MCU), 
+    .reset(SW0), 
+    .OPCODE_WB(OPCODE), 
+    .PC(PC), 
+    .Alu_out(Alu_out),
+    .RF_data_in(RF_data_in), 
+    .Cout(Cout), 
+    .OF(OF)
+);
+
+// 7-Segment Multiplexer Logic
+function automatic logic [7:0] get_7SEG_value(input [3:0] value);
+    if (value <= 4'h9) return 8'h30 + value; 
+    else               return 8'h41 + (value - 4'hA); 
+endfunction
+
+always_comb begin
+    // Use 8'h00 for true blanking
+    SevSeg_Display = '{default: 8'h00}; 
+
+    case (Display_Select)  
+        3'b000 : begin // "IBRAHI"
+            SevSeg_Display[5] = 8'h49; SevSeg_Display[4] = 8'h42; 
+            SevSeg_Display[3] = 8'h52; SevSeg_Display[2] = 8'h41; 
+            SevSeg_Display[1] = 8'h48; SevSeg_Display[0] = 8'h49; 
+        end
+        3'b011 : begin // ALU Result
+            SevSeg_Display[1] = get_7SEG_value(Alu_out[7:4]);
+            SevSeg_Display[0] = get_7SEG_value(Alu_out[3:0]);
+        end
+        3'b101 : begin // Writeback Data
+            SevSeg_Display[1] = get_7SEG_value(RF_data_in[7:4]);
+            SevSeg_Display[0] = get_7SEG_value(RF_data_in[3:0]);
+        end
+        3'b110 : begin // Program Counter
+            SevSeg_Display[1] = get_7SEG_value(PC[7:4]);
+            SevSeg_Display[0] = get_7SEG_value(PC[3:0]);
+        end
+        3'b111 : begin // Opcode
+            SevSeg_Display[0] = get_7SEG_value(OPCODE);
+        end
+        default : ;
+    endcase
+end
+
+// ASCII Decoders
+ASCII27Seg SEG_5 (.AsciiCode(SevSeg_Display[5]), .HexSeg(SevSeg5));
+ASCII27Seg SEG_4 (.AsciiCode(SevSeg_Display[4]), .HexSeg(SevSeg4));
+ASCII27Seg SEG_3 (.AsciiCode(SevSeg_Display[3]), .HexSeg(SevSeg3));
+ASCII27Seg SEG_2 (.AsciiCode(SevSeg_Display[2]), .HexSeg(SevSeg2));
+ASCII27Seg SEG_1 (.AsciiCode(SevSeg_Display[1]), .HexSeg(SevSeg1));
+ASCII27Seg SEG_0 (.AsciiCode(SevSeg_Display[0]), .HexSeg(SevSeg0));
+
+endmodule
 */
