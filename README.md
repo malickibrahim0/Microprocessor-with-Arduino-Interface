@@ -1,4 +1,4 @@
-# Microprocessor-with-Arduino-Interface
+# 32 - Bit Microprocessor-with-Arduino-Interface
 
 32-bit pipelined RISC SoC targeting Intel MAX10 (DE10-Lite).
 
